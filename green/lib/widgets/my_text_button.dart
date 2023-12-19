@@ -8,11 +8,10 @@ class MyTextButton extends StatelessWidget {
     required this.onTap,
     required this.bgColor,
     required this.textColor,
-  
   }) : super(key: key);
 
   final String buttonName;
-  final VoidCallback onTap; // Use VoidCallback instead of Function
+  final VoidCallback onTap;
   final Color bgColor;
   final Color textColor;
 

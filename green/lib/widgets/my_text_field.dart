@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 
-
 class MyTextField extends StatelessWidget {
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
@@ -20,14 +19,10 @@ class MyTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
+      child: TextFormField(
+        // Changed to TextFormField
         controller: controller,
-        onChanged: (value) {
-          if (validator != null) {
-            validator!(value);
-          }
-        },
-        style: kBodyText.copyWith(color: Colors.white),
+        style: kBodyText.copyWith(color: Color.fromARGB(255, 7, 132, 51)),
         keyboardType: inputType,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -49,6 +44,7 @@ class MyTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
         ),
+        validator: validator, // Directly using the validator
       ),
     );
   }

@@ -18,16 +18,9 @@ class MyPasswordField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
+      child: TextFormField( // Changed to TextFormField
         controller: controller,
-        onChanged: (value) {
-          if (validator != null) {
-            validator!(value);
-          }
-        },
-        style: kBodyText.copyWith(color: Color.fromRGBO(40, 97, 11, 1)),
         obscureText: isPasswordVisible,
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.done,
@@ -41,7 +34,7 @@ class MyPasswordField extends StatelessWidget {
               onPressed: onTap,
               icon: Icon(
                 isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                color: Colors.grey,
+                color: Color.fromRGBO(40, 97, 11, 1),
               ),
             ),
           ),
@@ -62,8 +55,8 @@ class MyPasswordField extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(18),
           ),
-        ),
-      ),
+       // Directly using the validator
+      ), validator: validator, ),
     );
   }
 }

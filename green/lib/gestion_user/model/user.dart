@@ -4,7 +4,7 @@ class User {
   final String? password;
   final String? nom;
   final String? prenom;
-
+final String? isBanned;
   final String? adress;
   final String? cin;
   final String? userName;
@@ -38,23 +38,39 @@ class User {
     this.updatedAt,
     this.v,
     this.token,
+    this.isBanned,
   });
 
 
   
 // Méthode pour convertir un objet User en un objet JSON
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'email': email,
-      'nom': nom,
-      'prenom': prenom,
-      // Ajouter les autres champs ici
-    };
-  }
+Map<String, dynamic> toJson() {
+  return {
+    '_id': id,
+    'email': email,
+    'password': password,
+    'nom': nom,
+    'prenom': prenom,
+    'isBanned': isBanned,
+    'adress': adress,
+    'cin': cin,
+    'userName': userName,
+    'numTel': numTel,
+    'score': score,
+    'lastPassword': lastPassword,
+    'isValid': isValid,
+    'imageRes': imageRes,
+    'role': role,
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'v': v,
+    'token': token,
+  };
+}
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'],
+      id: json['id'],
       email: json['email'],
       password: json['password'],
       nom: json['nom'],
@@ -72,6 +88,7 @@ class User {
       updatedAt: parseDateTime(json['updatedAt']),
       v: json['__v'],
       token: json['token'],
+      isBanned:json['isBanned'],
     );
   }
   @override

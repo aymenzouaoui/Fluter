@@ -29,6 +29,7 @@ const kBodyText2 =
 TextStyle kLoginTitleStyle(Size size) => GoogleFonts.ubuntu(
       fontSize: size.height * 0.060,
       fontWeight: FontWeight.bold,
+      color: Color.fromRGBO(40, 97, 11, 1)
     );
 
 TextStyle kLoginSubtitleStyle(Size size) => GoogleFonts.ubuntu(
@@ -47,7 +48,7 @@ TextStyle kLoginOrSignUpTextStyle(
     GoogleFonts.ubuntu(
       fontSize: size.height * 0.022,
       fontWeight: FontWeight.w500,
-      color: Colors.deepPurpleAccent,
+      color: Color.fromRGBO(40, 97, 11, 1),
     );
 
-TextStyle kTextFormFieldStyle() => const TextStyle(color: Colors.black);
+TextStyle kTextFormFieldStyle() => const TextStyle(color: Color.fromRGBO(40, 97, 11, 1));

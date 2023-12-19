@@ -46,7 +46,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
               suffixIcon: widget.suffixIcon ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.remove_red_eye : Icons.visibility_off_outlined,
-                  color: Colors.black54,
+                  color: Color.fromRGBO(40, 97, 11, 1),
                 ),
                 onPressed: () {
                   setState(() {

@@ -4,7 +4,7 @@ import '../gestion_user/model/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  final String baseUrl="http://192.168.1.16:9090";
+  final String baseUrl = "http://192.168.1.16:9091";
 
   AuthService();
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
@@ -54,12 +54,21 @@ class AuthService {
       Uri.parse('$baseUrl/user'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(
-          {'email': email, 'password': password, 'username': username}),
+          {'email': email, 'password': password, 'userName': username}),
     );
 
     if (response.statusCode == 200) {
-      // Registration successful, parse the response
-      return jsonDecode(response.body);
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+
+      if (responseData.containsKey('email') ) {
+        final email = responseData['email'];
+
+        return responseData;
+      } else {
+        print('Invalid responseData format');
+        throw Exception('Invalid responseData format');
+      }
     } else {
       // Registration failed, handle the error
       throw Exception('Failed to register');
@@ -193,7 +202,7 @@ class AuthService {
       }
 
       final response = await http.get(
-        Uri.parse('http://192.168.1.16:9090/auth/loggeduser'),
+        Uri.parse('$baseUrl/auth/loggeduser'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
@@ -231,8 +240,6 @@ class AuthService {
 
   Future<Map<String, dynamic>> sendResetCode(String email) async {
     print("aaaaaaaaaaaaa");
-    
-    
     print(email);
     try {
       final response = await http.post(
@@ -245,6 +252,9 @@ class AuthService {
       if (response.statusCode == 200) {
         // Successful reset code sent, parse the response
         final Map<String, dynamic> responseData = jsonDecode(response.body);
+        // Extract and save the token from the response
+        final String token = responseData['token'] as String;
+        await saveSession('token', token);
         return responseData;
       } else {
         // Handle failure, maybe throw an exception or return an error message
@@ -257,64 +267,138 @@ class AuthService {
     }
   }
 
- Future<bool> verifyResetCode(String email, String enteredCode) async {
-  try {
-    final response = await http.post(
-      Uri.parse('your_base_url/user/verifyResetCode'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'resetCode': enteredCode}),
+  Future<bool> verifyResetCode(String email, String enteredCode) async {
+    try {
+      print('aaaaaaaa');
+      print(email);
+      print(enteredCode);
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/verifyResetCode'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'resetCode': enteredCode}),
+      );
+
+      if (response.statusCode == 200) {
+        // Server returned success, reset code is valid
+        return true;
+      } else {
+        // Reset code is not valid
+        return false;
+      }
+    } catch (error) {
+      // Handle network errors or other exceptions
+      print('Error verifying reset code: $error');
+      throw Exception('Failed to verify reset code');
+    }
+  }
+
+  Future<void> banUser(String userId) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/$userId/ban'),
     );
 
     if (response.statusCode == 200) {
-      // Server returned success, reset code is valid
-      return true;
+      print('Utilisateur banni avec succès');
     } else {
-      // Reset code is not valid
-      return false;
+      print('Erreur lors du bannissement : ${response.statusCode}');
     }
-  } catch (error) {
-    // Handle network errors or other exceptions
-    print('Error verifying reset code: $error');
-    throw Exception('Failed to verify reset code');
   }
-}
 
-Future<void> banUser(String userId) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/admin/$userId/ban'),
-  );
+  Future<void> unbanUser(String userId) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/$userId/unban'),
+    );
 
-  if (response.statusCode == 200) {
-    print('Utilisateur banni avec succès');
-  } else {
-    print('Erreur lors du bannissement : ${response.statusCode}');
+    if (response.statusCode == 200) {
+      print('Utilisateur débanni avec succès');
+    } else {
+      print('Erreur lors du débannissement : ${response.statusCode}');
+    }
   }
-}
 
-Future<void> unbanUser(String userId) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/admin/$userId/unban'),
-  );
+  Future<void> banUserWithDuration(
+      String userId, String durationInMinutes) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/admin/$userId/banWithDuration'),
+      body: {'durationInMinutes': durationInMinutes},
+    );
 
-  if (response.statusCode == 200) {
-    print('Utilisateur débanni avec succès');
-  } else {
-    print('Erreur lors du débannissement : ${response.statusCode}');
+    if (response.statusCode == 200) {
+      print('Utilisateur banni avec succès pour une durée définie');
+    } else {
+      print('Erreur lors du bannissement avec durée : ${response.statusCode}');
+    }
   }
-}
 
-Future<void> banUserWithDuration(String userId, int durationInMinutes) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/admin/$userId/banWithDuration'),
-    body: {'durationInMinutes': durationInMinutes.toString()},
-  );
+  Future<List<Map<String, dynamic>>> getBannedUser() async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/admin/getBannedUsers'));
 
-  if (response.statusCode == 200) {
-    print('Utilisateur banni avec succès pour une durée définie');
-  } else {
-    print('Erreur lors du bannissement avec durée : ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        final List<Map<String, dynamic>> bannedUsers =
+            jsonData.cast<Map<String, dynamic>>();
+        return bannedUsers;
+      } else {
+        throw Exception('Failed to load banned users');
+      }
+    } catch (error) {
+      print('Error: $error');
+      throw Exception('Failed to load banned users');
+    }
   }
-}
+
+  Future<void> newPassword(String email, String newPassword) async {
+    try {
+      final response = await http.put(
+        Uri.parse(
+            '$baseUrl/admin/newPassword'), // Replace with your actual endpoint
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'newPassword': newPassword}),
+      );
+
+      if (response.statusCode == 200) {
+        // Password updated successfully
+        print('Password updated successfully for email: $email');
+      } else {
+        // Handle failure, maybe throw an exception or return an error message
+        print('Failed to update password: ${response.statusCode}');
+        throw Exception('Failed to update password');
+      }
+    } catch (error) {
+      // Handle network errors or other exceptions
+      print('Error updating password: $error');
+      throw Exception('Failed to update password');
+    }
+  }
+
+  Future<bool> updateUserById(
+      String userId, Map<String, dynamic> updatedData) async {
+    String url = '$baseUrl/user/$userId'; // Replace with your actual server URL
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(updatedData),
+      );
+
+      if (response.statusCode == 200) {
+        print('User updated successfully');
+        return true; // Return true on success
+      } else {
+        print('Failed to update user. Status code: ${response.statusCode}');
+        return false; // Return false on non-successful status code
+      }
+    } catch (e) {
+      print('Error occurred while updating user: $e');
+      return false; // Return false on exception
+    }
+  }
+
 
 
 }

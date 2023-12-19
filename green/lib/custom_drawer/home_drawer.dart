@@ -1,3 +1,5 @@
+import 'package:flutter_login_register_ui/gestion_user/UserEditScreen.dart';
+
 import '/app_theme.dart';
 import 'package:flutter/material.dart';
 import '../gestion_user/model/user.dart';
@@ -28,6 +30,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     if (user != null) {
       setState(() {
         userName = '${user.nom} ${user.prenom}';
+        
         userImage = user.imageRes ?? 'assets/images/userImage.png';
       });
     }
@@ -36,6 +39,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
   List<DrawerList>? drawerList;
   String userName = "";
   String userImage = '';
+  
   @override
   void initState() {
     setDrawerListArray();
@@ -54,14 +58,9 @@ class _HomeDrawerState extends State<HomeDrawer> {
         index: DrawerIndex.Help,
         labelName: 'Setting',
         isAssetsImage: true,
-        imageName: 'assets/setting.png',
+        imageName: 'assets/images/gear.png',
       ),
-      DrawerList(
-        index: DrawerIndex.Help,
-        labelName: 'Help',
-        isAssetsImage: true,
-        imageName: 'assets/help.png',
-      ),
+     
       DrawerList(
         index: DrawerIndex.FeedBack,
         labelName: 'FeedBack',
@@ -208,6 +207,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
+
   void onTapped() async {
   print('Signing Out...');
 
@@ -337,7 +337,19 @@ class _HomeDrawerState extends State<HomeDrawer> {
   }
 
   Future<void> navigationtoScreen(DrawerIndex indexScreen) async {
+  
+   String? authToken = await AuthService().getSession('token');
+   User? user=await AuthService().getLoggedInUser();
+     print(user?.id.toString());
     widget.callBackIndex!(indexScreen);
+    if (indexScreen == DrawerIndex.Help) {
+      // Navigate to UserEditScreen when "Setting" is clicked
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => UserEditScreen(id: user!.id.toString(),), // replace UserEditScreen with the actual screen you want to navigate to
+        ),
+      );
+    }
   }
 }
 

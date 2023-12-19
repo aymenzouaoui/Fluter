@@ -16,7 +16,7 @@ class CustomFormButton extends StatelessWidget {
       ),
       child: TextButton(
         onPressed: onPressed,
-        child: Text(innerText, style: const TextStyle(color: Colors.white, fontSize: 20),),
+        child: Text(innerText, style: const TextStyle(color: Colors.white, fontSize: 40),),
       ),
     );
   }
