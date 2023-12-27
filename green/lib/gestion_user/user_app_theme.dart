@@ -1,7 +1,7 @@
 import '/main.dart';
 import 'package:flutter/material.dart';
 
-class HotelAppTheme {
+class UserAppTheme {
   static TextTheme _buildTextTheme(TextTheme base) {
     const String fontName = 'WorkSans';
     return base.copyWith(
@@ -48,4 +48,37 @@ class HotelAppTheme {
       platform: TargetPlatform.iOS,
     );
   }
+
+ static ThemeData buildDarkTheme() {
+    final Color primaryColor = HexColor('#0D0D0D'); // Example dark primary color
+    final Color secondaryColor = HexColor('#1A1A1A'); // Example dark secondary color
+    final ColorScheme colorScheme = ColorScheme.dark().copyWith(
+      primary: primaryColor,
+      secondary: secondaryColor,
+    );
+    final ThemeData base = ThemeData.dark();
+    return base.copyWith(
+      colorScheme: colorScheme,
+      primaryColor: primaryColor,
+      scaffoldBackgroundColor: HexColor('#121212'), // Common dark theme background color
+      backgroundColor: HexColor('#121212'),
+      cardColor: HexColor('#1E1E1E'),
+      errorColor: Colors.red[200], // Adjust to fit dark theme
+      buttonTheme: ButtonThemeData(
+        colorScheme: colorScheme,
+        textTheme: ButtonTextTheme.primary,
+      ),
+      textTheme: _buildTextTheme(base.textTheme).apply(
+        bodyColor: Colors.white, // Text color for dark theme
+        displayColor: Colors.white, // Text color for dark theme
+      ),
+      primaryTextTheme: _buildTextTheme(base.primaryTextTheme),
+      appBarTheme: AppBarTheme(
+        color: HexColor('#1E1E1E'), // Example app bar color for dark theme
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      platform: TargetPlatform.iOS,
+    );
+  }
+  
 }

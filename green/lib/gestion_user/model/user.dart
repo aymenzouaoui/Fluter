@@ -4,7 +4,7 @@ class User {
   final String? password;
   final String? nom;
   final String? prenom;
-final String? isBanned;
+  final String? isBanned;
   final String? adress;
   final String? cin;
   final String? userName;
@@ -18,6 +18,8 @@ final String? isBanned;
   final DateTime? updatedAt;
   final int? v;
   final String? token;
+  final String? loginCount;
+  final String? totalTimeSpent;
 
   User({
     this.id,
@@ -39,34 +41,36 @@ final String? isBanned;
     this.v,
     this.token,
     this.isBanned,
+    this.loginCount,
+    this.totalTimeSpent,
   });
 
-
-  
 // Méthode pour convertir un objet User en un objet JSON
-Map<String, dynamic> toJson() {
-  return {
-    '_id': id,
-    'email': email,
-    'password': password,
-    'nom': nom,
-    'prenom': prenom,
-    'isBanned': isBanned,
-    'adress': adress,
-    'cin': cin,
-    'userName': userName,
-    'numTel': numTel,
-    'score': score,
-    'lastPassword': lastPassword,
-    'isValid': isValid,
-    'imageRes': imageRes,
-    'role': role,
-    'createdAt': createdAt?.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
-    'v': v,
-    'token': token,
-  };
-}
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'email': email,
+      'password': password,
+      'nom': nom,
+      'prenom': prenom,
+      'isBanned': isBanned,
+      'adress': adress,
+      'cin': cin,
+      'userName': userName,
+      'numTel': numTel,
+      'score': score,
+      'lastPassword': lastPassword,
+      'isValid': isValid,
+      'imageRes': imageRes,
+      'role': role,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'v': v,
+      'token': token,
+      'loginCount': loginCount,
+      'totalTimeSpent': totalTimeSpent,
+    };
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -88,30 +92,35 @@ Map<String, dynamic> toJson() {
       updatedAt: parseDateTime(json['updatedAt']),
       v: json['__v'],
       token: json['token'],
-      isBanned:json['isBanned'],
+      isBanned: json['isBanned'],
+      loginCount: json['loginCount'],
+      totalTimeSpent: json['totalTimeSpent'],
     );
   }
   @override
-String toString() {
-  return 'User{id: $id, '
-      'email: $email, '
-      'nom: $nom, '
-      'prenom: $prenom, '
-      'adress: $adress, '
-      'cin: $cin, '
-      'userName: $userName, '
-      'numTel: $numTel, '
-      'score: $score, '
-      'lastPassword: $lastPassword, '
-      'isValid: $isValid, '
-      'imageRes: $imageRes, '
-      'role: $role, '
-      'createdAt: $createdAt, '
-      'updatedAt: $updatedAt, '
-      'v: $v, '
-      'token: $token}';
-}
-
+  String toString() {
+    return 'User{'
+        'id: $id, '
+        'email: $email, '
+        'nom: $nom, '
+        'prenom: $prenom, '
+        'adress: $adress, '
+        'cin: $cin, '
+        'userName: $userName, '
+        'numTel: $numTel, '
+        'score: $score, '
+        'lastPassword: $lastPassword, '
+        'isValid: $isValid, '
+        'imageRes: $imageRes, '
+        'role: $role, '
+        'createdAt: $createdAt, '
+        'updatedAt: $updatedAt, '
+        'v: $v, '
+        'token: $token, '
+        'loginCount: $loginCount, '
+        'totalTimeSpent: $totalTimeSpent'
+        '}';
+  }
 }
 
 DateTime? parseDateTime(String? dateTimeString) {

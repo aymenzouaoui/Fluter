@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../gestion_user/model/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+//aaaaaaaaaaaaaa
 class AuthService {
-  final String baseUrl = "http://192.168.1.16:9091";
+  final String baseUrl = "http://192.168.1.16:9090";
 
   AuthService();
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
@@ -146,7 +146,9 @@ class AuthService {
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       // Retrieve the authentication token from SharedPreferences
-      String? authToken = await getSession('token');
+           String? authToken ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNjU4NDBjNDI3YTA4NTk1MzM4ZmQ4YWFlIiwicm9sZSI6ImFkbWluIn0sImlhdCI6MTcwMzI5NDU2MywiZXhwIjoxNzAzMjk4MTYzfQ.geFZwqJiV0A42iOFYhbVkurqCdOVSFkMx4hGOpnOkaY";
+           // await getSession('token');
+      await getSession('token');
 
       if (authToken == null) {
         // Token not found, handle the error
@@ -188,6 +190,25 @@ class AuthService {
   Future<String?> getSession(String key) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString(key);
+  }
+  Future<Map<String, dynamic>> _fetchUserStats(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/userdailystats/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+            'Failed to fetch user stats. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch user stats');
+      }
+    } catch (error) {
+      print('Error fetching user stats: $error');
+      throw Exception('Error fetching user stats');
+    }
   }
 
   Future<User?> getLoggedInUser() async {
@@ -399,6 +420,43 @@ class AuthService {
     }
   }
 
+Future<Map<String, dynamic>> getUserDailyStats(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/userdailystats/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
 
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData;
+      } else {
+        print('Failed to fetch user daily stats. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch user daily stats');
+      }
+    } catch (error) {
+      print('Error fetching user daily stats: $error');
+      throw Exception('Error fetching user daily stats');
+    }
+  }
 
+  Future<Map<String, dynamic>> getUserGlobalStats(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/userglobalstats/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return responseData;
+      } else {
+        print('Failed to fetch user global stats. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch user global stats');
+      }
+    } catch (error) {
+      print('Error fetching user global stats: $error');
+      throw Exception('Error fetching user global stats');
+    }
+  }
 }

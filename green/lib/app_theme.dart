@@ -86,6 +86,49 @@ class AppTheme {
     color: lightText, // was lightText
   );
 
+ static const Color _darkPrimaryColor = Color(0xFF1F1F1F);
+  static const Color _darkSecondaryColor = Color(0xFF373737);
+  static const Color _darkOnPrimaryColor = Color(0xFFFFFFFF);
+
+  // Dark theme
+  static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: _darkPrimaryColor,
+    hintColor: Colors.tealAccent,
+    scaffoldBackgroundColor: _darkPrimaryColor,
+    cardColor: _darkSecondaryColor,
+    textTheme: TextTheme(
+      headline4: display1.copyWith(color: _darkOnPrimaryColor),
+      headline5: headline.copyWith(color: _darkOnPrimaryColor),
+      headline6: title.copyWith(color: _darkOnPrimaryColor),
+      subtitle2: subtitle.copyWith(color: _darkOnPrimaryColor),
+      bodyText2: body2.copyWith(color: _darkOnPrimaryColor),
+      bodyText1: body1.copyWith(color: _darkOnPrimaryColor),
+      caption: caption.copyWith(color: _darkOnPrimaryColor),
+    ),
+    iconTheme: IconThemeData(color: _darkOnPrimaryColor),
+    appBarTheme: AppBarTheme(
+      color: _darkSecondaryColor,
+      iconTheme: IconThemeData(color: _darkOnPrimaryColor),
+    ),
+    // Define other theme properties as needed
+  );
+
+  // Light theme
+  static final ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
+    primaryColor: white,
+    hintColor: grey,
+    scaffoldBackgroundColor: nearlyWhite,
+    cardColor: white,
+    textTheme: textTheme,
+    iconTheme: IconThemeData(color: nearlyBlack),
+    appBarTheme: AppBarTheme(
+      color: white,
+      iconTheme: IconThemeData(color: nearlyBlack),
+    ),
+    // Define other theme properties as needed
+  );
 
 
 }

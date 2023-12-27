@@ -1,5 +1,6 @@
-import './hotel_app_theme.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_login_register_ui/gestion_user/user_app_theme.dart';
 
 class RangeSliderView extends StatefulWidget {
   const RangeSliderView({Key? key, this.values, this.onChangeRangeValues})
@@ -76,7 +77,7 @@ class _RangeSliderViewState extends State<RangeSliderView> {
               values: _values!,
               min: 0.0,
               max: 1000.0,
-              activeColor: HotelAppTheme.buildLightTheme().primaryColor,
+              activeColor: UserAppTheme.buildLightTheme().primaryColor,
               inactiveColor: Colors.grey.withOpacity(0.4),
               divisions: 1000,
               onChanged: (RangeValues values) {

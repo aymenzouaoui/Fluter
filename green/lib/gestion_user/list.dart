@@ -1,6 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_login_register_ui/gestion_user/UserListTable.dart';
-import 'hotel_app_theme.dart';
+import 'package:flutter_login_register_ui/gestion_user/pagination.dart';
+import 'package:flutter_login_register_ui/gestion_user/user_app_theme.dart';
+
 import '/gestion_user/calendar_popup_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -14,6 +18,14 @@ class UserListScreen extends StatefulWidget {
 
 class _UserListScreenState extends State<UserListScreen>
     with TickerProviderStateMixin {
+  String? selectedUserId;
+
+   int currentPage = 1;
+  int pageSize = 8; // Number of items per page
+  List<Map<String, dynamic>> allUsers = []; // All users fetched from the server
+  List<Map<String, dynamic>> usersToShow =
+      []; // Users to show on the current page
+
   late final AuthService authService;
   AnimationController? animationController;
   List<Map<String, dynamic>> userList = [];
@@ -41,9 +53,22 @@ class _UserListScreenState extends State<UserListScreen>
     // Initialize the authService here
     authService = AuthService();
 
-    // Call getData() here to ensure it is called only once
-    getData();
+    // Fetch all users and set initial page
+    authService.getAllUsers().then((fetchedUsers) {
+      setState(() {
+        allUsers = fetchedUsers;
+        userList = fetchedUsers;
+        userBanStatus = Map.fromIterable(
+          fetchedUsers,
+          key: (user) => user['id'].toString(),
+          value: (user) => user['isBanned'] ?? false,
+        );
+        displayedUsers = fetchedUsers;
+        setPage(1); // Set initial page
+      });
+    });
   }
+
 
   Future<bool> getData() async {
     try {
@@ -71,6 +96,7 @@ class _UserListScreenState extends State<UserListScreen>
       return false;
     }
   }
+  
 
   void searchUsers(String query) {
     setState(() {
@@ -82,52 +108,58 @@ class _UserListScreenState extends State<UserListScreen>
     });
   }
 @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('User List'),
-    ),
-    body: userList.isEmpty
-        ? Center(child: CircularProgressIndicator())
-        : Row(
-            children: [
-              Expanded(
-                flex: 2, // Adjust flex ratio to control width of the card
-                child: _buildStatisticsCard(),
-              ),
-              Expanded(
-                flex: 5, // Adjust flex ratio to control width of the data table
-                child: Column(
-                  children: [
-                    getSearchBarUI(),
-                    getFilterBarUI(
-                      context: context,
-                      title: 'Filter',
-                      userList: displayedUsers.isEmpty ? userList : displayedUsers,
-                    ),
-                    Expanded(
-                      child: displayedUsers.isEmpty
-                          ? Center(child: Text('No matching users.'))
-                          : CustomUserDataTable(
-                              displayedUsers: displayedUsers,
-                              userBanStatus: userBanStatus,
-                              showBanConfirmationDialog: _showBanConfirmationDialog,
-                              showBanDurationConfirmationDialog: _showBanDurationConfirmationDialog,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('User List'),
+      ),
+      body: Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: SingleChildScrollView(
+              child: _buildStatisticsCard(),
+            ),
           ),
-  );
-}
+          Expanded(
+            flex: 3,
+            child: Column(
+              children: [
+                getSearchBarUI(),
+              //  getFilterBarUI(userList: displayedUsers),
+                Expanded(
+                  child: CustomUserDataTable(
+                    displayedUsers: displayedUsers,
+                    userBanStatus: userBanStatus,
+                    showBanConfirmationDialog: _showBanConfirmationDialog,
+                    showBanDurationConfirmationDialog: _showBanDurationConfirmationDialog,
+                  ),
+                ),
+                PaginationWidget(
+                  currentPage: currentPage,
+                  pageSize: pageSize,
+                  totalItems: allUsers.length,
+                  onPageChanged: setPage,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-Widget _buildStatisticsCard() {
-  // Example statistics calculations
+ Widget _buildStatisticsCard() {
+  // Example statistics calculations for all users
   int totalUsers = userList.length;
   int activeUsers = userList.where((user) => !user['isBanned']).length;
   int bannedUsers = totalUsers - activeUsers;
+
+  // Fetch the selected user's data using the selectedUserId
+  final selectedUser = userList.firstWhere(
+    (user) => user['id'] == selectedUserId,
+    orElse: () => <String, dynamic>{}, // Provide a default empty map
+  );
 
   return Card(
     margin: EdgeInsets.all(8.0),
@@ -136,101 +168,98 @@ Widget _buildStatisticsCard() {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('User Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('User Statistics',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 10),
           _buildStatisticItem('Total Users', totalUsers),
           _buildStatisticItem('Active Users', activeUsers),
           _buildStatisticItem('Banned Users', bannedUsers),
           // Add more statistics as needed
+          SizedBox(height: 20),
+          if (selectedUser.isNotEmpty)
+            Column(
+              children: [
+                Text('Selected User Statistics',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                _buildStatisticItem(
+                    'Login Count', selectedUser['loginCount'] ?? 'N/A'),
+                _buildStatisticItem('Total Time Spent',
+                    selectedUser['totalTimeSpent'] ?? 'N/A'),
+                // Add more statistics for the selected user here
+              ],
+            ),
         ],
       ),
     ),
   );
 }
 
-Widget _buildStatisticItem(String title, int count) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: 8.0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: TextStyle(fontSize: 16)),
-        Text(count.toString(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      ],
-    ),
-  );
-}
 
-
-  void _showBanConfirmationDialog(
-      String userName, String userId, bool isBanned) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15.0),
-          ),
-          title: Text('Confirm Action'),
-          content: Text(
-              'Are you sure you want to ${isBanned ? 'unban' : 'ban'} $userName?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('No', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-            TextButton(
-              child: Text('Yes', style: TextStyle(color: Colors.green)),
-              onPressed: () async {
-                Navigator.of(context).pop(); // Close the dialog
-                try {
-                  if (isBanned) {
-                    await authService.unbanUser(userId);
-                  } else {
-                    await authService.banUser(userId);
-                  }
-                  setState(() {
-                    userBanStatus[userId] = !isBanned;
-                  });
-                  // Optional: Show a snackbar or another dialog to confirm the action
-                } catch (error) {
-                  // Handle error, e.g., show a snackbar or log the error
-                  print('Error: $error');
-                }
-              },
-            ),
-          ],
-        );
-      },
+  Widget _buildStatisticItem(String title, int count) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: TextStyle(fontSize: 16)),
+          Text(count.toString(),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
-// Function to show the confirmation dialog
-void _showBanDurationConfirmationDialog(String userName, String userId, String duration) {
+
+ void _showBanConfirmationDialog(String userName, String userId, bool isBanned) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        title: Text('Confirm Ban Duration'),
-        content: Text('Ban $userName for $duration?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        title: Text('Confirm Action'),
+        content: Text(
+            'Are you sure you want to ${isBanned ? 'unban' : 'ban'} $userName?'),
         actions: <Widget>[
           TextButton(
-            child: Text('Cancel', style: TextStyle(color: Colors.red)),
-            onPressed: () => Navigator.of(context).pop(),
+            child: Text('No', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
           ),
           TextButton(
-            child: Text('Confirm', style: TextStyle(color: Colors.green)),
+            child: Text('Yes', style: TextStyle(color: Colors.green)),
             onPressed: () async {
               Navigator.of(context).pop(); // Close the dialog
+               bool success = false;
               try {
-                await authService.banUserWithDuration(userId, duration);
-                print('Banned $userName for $duration');
-                // Handle additional logic after confirmation
+                if (isBanned) {
+                  await authService.unbanUser(userId);
+                  success = true;
+                } else {
+                  await authService.banUser(userId);
+                  success = true;
+                }
+                // Update userList and userBanStatus immediately
+                List<Map<String, dynamic>> updatedUsers = await authService.getAllUsers();
+                Map<String, bool> updatedUserBanStatus = Map.fromIterable(
+                  updatedUsers,
+                  key: (user) => user['id'].toString(),
+                  value: (user) => user['isBanned'] ?? false,
+                );
+                setState(() {
+                  userList = updatedUsers;
+                  userBanStatus = updatedUserBanStatus;
+                   refreshUserData();
+                });
+                 refreshUserData();
+                // Optional: Show a snackbar or another dialog to confirm the action
               } catch (error) {
+                
+                // Handle error, e.g., show a snackbar or log the error
                 print('Error: $error');
-                // Handle error
               }
             },
           ),
@@ -239,6 +268,67 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
     },
   );
 }
+Future<void> refreshUserData() async {
+  try {
+    List<Map<String, dynamic>> updatedUsers = await authService.getAllUsers();
+    setState(() {
+      allUsers = updatedUsers;
+      setPage(currentPage); // Maintain the current page but refresh the users
+    });
+  } catch (error) {
+    print('Error refreshing user data: $error');
+  }
+}
+  void setPage(int pageNumber) {
+  int startIndex = (pageNumber - 1) * pageSize;
+  int endIndex = min(startIndex + pageSize, allUsers.length);
+  setState(() {
+    currentPage = pageNumber;
+    displayedUsers = allUsers.sublist(startIndex, endIndex);
+    userList = allUsers; // Keep track of all users
+    // userBanStatus remains unchanged as it's initialized once
+     userBanStatus = { for (var user in allUsers) user['id'].toString(): user['isBanned'] ?? false };
+
+  });
+}
+
+
+// Function to show the confirmation dialog
+  void _showBanDurationConfirmationDialog(
+      String userName, String userId, String duration) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+          title: Text('Confirm Ban Duration'),
+          content: Text('Ban $userName for $duration?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel', style: TextStyle(color: Colors.red)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Confirm', style: TextStyle(color: Colors.green)),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                try {
+                  await authService.banUserWithDuration(userId, duration);
+                  print('Banned $userName for $duration');
+                  // Handle additional logic after confirmation
+                } catch (error) {
+                  print('Error: $error');
+                  // Handle error
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget getSearchBarUI() {
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
@@ -249,7 +339,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
               padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
               child: Container(
                 decoration: BoxDecoration(
-                  color: HotelAppTheme.buildLightTheme().backgroundColor,
+                  color: UserAppTheme.buildLightTheme().backgroundColor,
                   borderRadius: const BorderRadius.all(
                     Radius.circular(38.0),
                   ),
@@ -275,7 +365,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
                     style: const TextStyle(
                       fontSize: 18,
                     ),
-                    cursorColor: HotelAppTheme.buildLightTheme().primaryColor,
+                    cursorColor: UserAppTheme.buildLightTheme().primaryColor,
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: 'userName...',
@@ -287,7 +377,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
           ),
           Container(
             decoration: BoxDecoration(
-              color: HotelAppTheme.buildLightTheme().primaryColor,
+              color: UserAppTheme.buildLightTheme().primaryColor,
               borderRadius: const BorderRadius.all(
                 Radius.circular(38.0),
               ),
@@ -313,7 +403,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
                   child: Icon(
                     FontAwesomeIcons.search,
                     size: 20,
-                    color: HotelAppTheme.buildLightTheme().backgroundColor,
+                    color: UserAppTheme.buildLightTheme().backgroundColor,
                   ),
                 ),
               ),
@@ -338,7 +428,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
           child: Container(
             height: 24,
             decoration: BoxDecoration(
-              color: HotelAppTheme.buildLightTheme().backgroundColor,
+              color: UserAppTheme.buildLightTheme().backgroundColor,
               boxShadow: <BoxShadow>[
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.2),
@@ -350,7 +440,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
           ),
         ),
         Container(
-          color: HotelAppTheme.buildLightTheme().backgroundColor,
+          color: UserAppTheme.buildLightTheme().backgroundColor,
           child: Padding(
             padding: const EdgeInsets.only(
               left: 16,
@@ -408,7 +498,7 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
                             child: Icon(
                               Icons.sort,
                               color:
-                                  HotelAppTheme.buildLightTheme().primaryColor,
+                                  UserAppTheme.buildLightTheme().primaryColor,
                             ),
                           ),
                         ],
@@ -430,6 +520,42 @@ void _showBanDurationConfirmationDialog(String userName, String userId, String d
         ),
       ],
     );
+  }
+Widget _buildSelectedUserStatisticsCard() {
+  // Fetch the selected user's data using the selectedUserId
+  final selectedUser = userList.firstWhere(
+    (user) => user['id'] == selectedUserId,
+    orElse: () => <String, dynamic>{} // Provide a default empty map
+  );
+  
+  // Check if the selected user has data before building the stats card
+  if (selectedUser.isEmpty) {
+    return SizedBox.shrink(); // If no user is selected or the user data is empty, show nothing.
+  }
+
+  return Card(
+    margin: EdgeInsets.all(8.0),
+    child: Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Selected User Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          Text('Login Count: ${selectedUser['loginCount'] ?? 'N/A'}'), // Use 'N/A' if loginCount is null
+          Text('Total Time Spent: ${selectedUser['totalTimeSpent'] ?? 'N/A'}'), // Use 'N/A' if totalTimeSpent is null
+          // Add more statistics for the selected user here
+        ],
+      ),
+    ),
+  );
+}
+
+
+  void _onUserSelected(String userId) {
+    setState(() {
+      selectedUserId = userId;
+    });
   }
 
   void showDemoDialog({BuildContext? context}) {
