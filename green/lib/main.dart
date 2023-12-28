@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login_register_ui/gestion_user/list.dart';
+import 'package:flutter_login_register_ui/screens/signin_page.dart';
 import 'package:flutter_login_register_ui/screens/welcome_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import './constants.dart'; // Contains your color constants and other configurations.
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
       theme: lightTheme, // The light theme data
       darkTheme: darkTheme, // The dark theme data
       themeMode: ThemeMode.system, // Use the system theme mode
-      home: WelcomePage(),
+      home: SignInPage(),
     );
   }
 }

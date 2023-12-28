@@ -20,8 +20,8 @@ class _UserListScreenState extends State<UserListScreen>
     with TickerProviderStateMixin {
   String? selectedUserId;
 
-   int currentPage = 1;
-  int pageSize = 8; // Number of items per page
+  int currentPage = 1;
+  int pageSize = 6; // Number of items per page
   List<Map<String, dynamic>> allUsers = []; // All users fetched from the server
   List<Map<String, dynamic>> usersToShow =
       []; // Users to show on the current page
@@ -69,7 +69,6 @@ class _UserListScreenState extends State<UserListScreen>
     });
   }
 
-
   Future<bool> getData() async {
     try {
       List<Map<String, dynamic>> users = await authService.getAllUsers();
@@ -96,7 +95,6 @@ class _UserListScreenState extends State<UserListScreen>
       return false;
     }
   }
-  
 
   void searchUsers(String query) {
     setState(() {
@@ -107,7 +105,8 @@ class _UserListScreenState extends State<UserListScreen>
           .toList();
     });
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -118,7 +117,12 @@ class _UserListScreenState extends State<UserListScreen>
           Expanded(
             flex: 1,
             child: SingleChildScrollView(
-              child: _buildStatisticsCard(),
+              child: Column(
+                children: [
+                  _buildStatisticsCard(),
+                  _buildConnectedUsersCard(), // Positioned right below the statistics card
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -126,13 +130,18 @@ class _UserListScreenState extends State<UserListScreen>
             child: Column(
               children: [
                 getSearchBarUI(),
-              //  getFilterBarUI(userList: displayedUsers),
+                // Uncomment the line below if you want to include the filter bar
+                getFilterBarUI(
+                    context: context,
+                    title: 'User List',
+                    userList: displayedUsers),
                 Expanded(
                   child: CustomUserDataTable(
                     displayedUsers: displayedUsers,
                     userBanStatus: userBanStatus,
                     showBanConfirmationDialog: _showBanConfirmationDialog,
-                    showBanDurationConfirmationDialog: _showBanDurationConfirmationDialog,
+                    showBanDurationConfirmationDialog:
+                        _showBanDurationConfirmationDialog,
                   ),
                 ),
                 PaginationWidget(
@@ -149,53 +158,151 @@ class _UserListScreenState extends State<UserListScreen>
     );
   }
 
- Widget _buildStatisticsCard() {
-  // Example statistics calculations for all users
-  int totalUsers = userList.length;
-  int activeUsers = userList.where((user) => !user['isBanned']).length;
-  int bannedUsers = totalUsers - activeUsers;
+  Widget _buildStatisticsCard() {
+    // Example statistics calculations for all users
+    int totalUsers = userList.length;
+    int activeUsers = userList.where((user) => !user['isBanned']).length;
+    int bannedUsers = totalUsers - activeUsers;
 
-  // Fetch the selected user's data using the selectedUserId
-  final selectedUser = userList.firstWhere(
-    (user) => user['id'] == selectedUserId,
-    orElse: () => <String, dynamic>{}, // Provide a default empty map
-  );
+    // Fetch the selected user's data using the selectedUserId
+    final selectedUser = userList.firstWhere(
+      (user) => user['id'] == selectedUserId,
+      orElse: () => <String, dynamic>{}, // Provide a default empty map
+    );
 
+    return Card(
+      margin: EdgeInsets.all(8.0),
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('User Statistics',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            _buildStatisticItem('Total Users', totalUsers),
+            _buildStatisticItem('Active Users', activeUsers),
+            _buildStatisticItem('Banned Users', bannedUsers),
+            // Add more statistics as needed
+            SizedBox(height: 20),
+            if (selectedUser.isNotEmpty)
+              Column(
+                children: [
+                  Text('Selected User Statistics',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  _buildStatisticItem(
+                      'Login Count', selectedUser['loginCount'] ?? 'N/A'),
+                  _buildStatisticItem('Total Time Spent',
+                      selectedUser['totalTimeSpent'] ?? 'N/A'),
+                  // Add more statistics for the selected user here
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  DateTime selectedDate = DateTime.now();
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  int connectedUsersCurrentPage = 1;
+  int connectedUsersPageSize = 2; // Number of items per page
+
+  Widget _buildConnectedUsersCard() {
   return Card(
     margin: EdgeInsets.all(8.0),
     child: Padding(
       padding: EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('User Statistics',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
-          _buildStatisticItem('Total Users', totalUsers),
-          _buildStatisticItem('Active Users', activeUsers),
-          _buildStatisticItem('Banned Users', bannedUsers),
-          // Add more statistics as needed
-          SizedBox(height: 20),
-          if (selectedUser.isNotEmpty)
-            Column(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Selected User Statistics',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                _buildStatisticItem(
-                    'Login Count', selectedUser['loginCount'] ?? 'N/A'),
-                _buildStatisticItem('Total Time Spent',
-                    selectedUser['totalTimeSpent'] ?? 'N/A'),
-                // Add more statistics for the selected user here
+                Text(
+                  'Connected Users',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () => _selectDate(context),
+                  child: Text('Select Date'),
+                ),
               ],
             ),
-        ],
+            SizedBox(height: 10),
+            FutureBuilder(
+              future: authService.getConnectedUsers(
+                selectedDate.toString(),
+                page: connectedUsersCurrentPage,
+                pageSize: connectedUsersPageSize,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  Map<String, dynamic> data = snapshot.data as Map<String, dynamic>;
+                  List<Map<String, dynamic>> connectedUsers = data['connectedUsers'];
+                  int totalItems = data['total'];
+
+                  return Column(
+                    children: [
+                      ...connectedUsers.map((user) {
+                        return Card(
+                          child: ListTile(
+                            title: Text(user['email'] ?? 'Unknown'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Time Connected: ${user['timeConnected'] ?? 'N/A'}',
+                                ),
+                                Text(
+                                  'Login Count: ${user['loginCount']?.toString() ?? 'N/A'}',
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      PaginationWidget(
+                        currentPage: connectedUsersCurrentPage,
+                        pageSize: connectedUsersPageSize,
+                        totalItems: totalItems,
+                        onPageChanged: (int page) {
+                          setState(() {
+                            connectedUsersCurrentPage = page;
+                          });
+                        },
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
     ),
   );
 }
-
 
   Widget _buildStatisticItem(String title, int count) {
     return Padding(
@@ -211,87 +318,91 @@ class _UserListScreenState extends State<UserListScreen>
     );
   }
 
- void _showBanConfirmationDialog(String userName, String userId, bool isBanned) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        title: Text('Confirm Action'),
-        content: Text(
-            'Are you sure you want to ${isBanned ? 'unban' : 'ban'} $userName?'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('No', style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
+  void _showBanConfirmationDialog(
+      String userName, String userId, bool isBanned) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
           ),
-          TextButton(
-            child: Text('Yes', style: TextStyle(color: Colors.green)),
-            onPressed: () async {
-              Navigator.of(context).pop(); // Close the dialog
-               bool success = false;
-              try {
-                if (isBanned) {
-                  await authService.unbanUser(userId);
-                  success = true;
-                } else {
-                  await authService.banUser(userId);
-                  success = true;
+          title: Text('Confirm Action'),
+          content: Text(
+              'Are you sure you want to ${isBanned ? 'unban' : 'ban'} $userName?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('No', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('Yes', style: TextStyle(color: Colors.green)),
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                bool success = false;
+                try {
+                  if (isBanned) {
+                    await authService.unbanUser(userId);
+                    success = true;
+                  } else {
+                    await authService.banUser(userId);
+                    success = true;
+                  }
+                  // Update userList and userBanStatus immediately
+                  List<Map<String, dynamic>> updatedUsers =
+                      await authService.getAllUsers();
+                  Map<String, bool> updatedUserBanStatus = Map.fromIterable(
+                    updatedUsers,
+                    key: (user) => user['id'].toString(),
+                    value: (user) => user['isBanned'] ?? false,
+                  );
+                  setState(() {
+                    userList = updatedUsers;
+                    userBanStatus = updatedUserBanStatus;
+                    refreshUserData();
+                  });
+                  refreshUserData();
+                  // Optional: Show a snackbar or another dialog to confirm the action
+                } catch (error) {
+                  // Handle error, e.g., show a snackbar or log the error
+                  print('Error: $error');
                 }
-                // Update userList and userBanStatus immediately
-                List<Map<String, dynamic>> updatedUsers = await authService.getAllUsers();
-                Map<String, bool> updatedUserBanStatus = Map.fromIterable(
-                  updatedUsers,
-                  key: (user) => user['id'].toString(),
-                  value: (user) => user['isBanned'] ?? false,
-                );
-                setState(() {
-                  userList = updatedUsers;
-                  userBanStatus = updatedUserBanStatus;
-                   refreshUserData();
-                });
-                 refreshUserData();
-                // Optional: Show a snackbar or another dialog to confirm the action
-              } catch (error) {
-                
-                // Handle error, e.g., show a snackbar or log the error
-                print('Error: $error');
-              }
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-Future<void> refreshUserData() async {
-  try {
-    List<Map<String, dynamic>> updatedUsers = await authService.getAllUsers();
-    setState(() {
-      allUsers = updatedUsers;
-      setPage(currentPage); // Maintain the current page but refresh the users
-    });
-  } catch (error) {
-    print('Error refreshing user data: $error');
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
-}
+
+  Future<void> refreshUserData() async {
+    try {
+      List<Map<String, dynamic>> updatedUsers = await authService.getAllUsers();
+      setState(() {
+        allUsers = updatedUsers;
+        setPage(currentPage); // Maintain the current page but refresh the users
+      });
+    } catch (error) {
+      print('Error refreshing user data: $error');
+    }
+  }
+
   void setPage(int pageNumber) {
-  int startIndex = (pageNumber - 1) * pageSize;
-  int endIndex = min(startIndex + pageSize, allUsers.length);
-  setState(() {
-    currentPage = pageNumber;
-    displayedUsers = allUsers.sublist(startIndex, endIndex);
-    userList = allUsers; // Keep track of all users
-    // userBanStatus remains unchanged as it's initialized once
-     userBanStatus = { for (var user in allUsers) user['id'].toString(): user['isBanned'] ?? false };
-
-  });
-}
-
+    int startIndex = (pageNumber - 1) * pageSize;
+    int endIndex = min(startIndex + pageSize, allUsers.length);
+    setState(() {
+      currentPage = pageNumber;
+      displayedUsers = allUsers.sublist(startIndex, endIndex);
+      userList = allUsers; // Keep track of all users
+      // userBanStatus remains unchanged as it's initialized once
+      userBanStatus = {
+        for (var user in allUsers)
+          user['id'].toString(): user['isBanned'] ?? false
+      };
+    });
+  }
 
 // Function to show the confirmation dialog
   void _showBanDurationConfirmationDialog(
@@ -521,36 +632,40 @@ Future<void> refreshUserData() async {
       ],
     );
   }
-Widget _buildSelectedUserStatisticsCard() {
-  // Fetch the selected user's data using the selectedUserId
-  final selectedUser = userList.firstWhere(
-    (user) => user['id'] == selectedUserId,
-    orElse: () => <String, dynamic>{} // Provide a default empty map
-  );
-  
-  // Check if the selected user has data before building the stats card
-  if (selectedUser.isEmpty) {
-    return SizedBox.shrink(); // If no user is selected or the user data is empty, show nothing.
-  }
 
-  return Card(
-    margin: EdgeInsets.all(8.0),
-    child: Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Selected User Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
-          Text('Login Count: ${selectedUser['loginCount'] ?? 'N/A'}'), // Use 'N/A' if loginCount is null
-          Text('Total Time Spent: ${selectedUser['totalTimeSpent'] ?? 'N/A'}'), // Use 'N/A' if totalTimeSpent is null
-          // Add more statistics for the selected user here
-        ],
+  Widget _buildSelectedUserStatisticsCard() {
+    // Fetch the selected user's data using the selectedUserId
+    final selectedUser = userList.firstWhere(
+        (user) => user['id'] == selectedUserId,
+        orElse: () => <String, dynamic>{} // Provide a default empty map
+        );
+
+    // Check if the selected user has data before building the stats card
+    if (selectedUser.isEmpty) {
+      return SizedBox
+          .shrink(); // If no user is selected or the user data is empty, show nothing.
+    }
+
+    return Card(
+      margin: EdgeInsets.all(8.0),
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Selected User Statistics',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10),
+            Text(
+                'Login Count: ${selectedUser['loginCount'] ?? 'N/A'}'), // Use 'N/A' if loginCount is null
+            Text(
+                'Total Time Spent: ${selectedUser['totalTimeSpent'] ?? 'N/A'}'), // Use 'N/A' if totalTimeSpent is null
+            // Add more statistics for the selected user here
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   void _onUserSelected(String userId) {
     setState(() {

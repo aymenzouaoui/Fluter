@@ -7,6 +7,61 @@ class AuthService {
   final String baseUrl = "http://192.168.1.16:9090";
 
   AuthService();
+
+ Future<Map<String, dynamic>> fetchUserStats(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/userdailystats/$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print(
+            'Failed to fetch user stats. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch user stats');
+      }
+    } catch (error) {
+      print('Error fetching user stats: $error');
+      throw Exception('Error fetching user stats');
+    }
+  }
+
+
+Future<Map<String, dynamic>> getConnectedUsers(String day, {int page = 1, int pageSize = 10}) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/auth/connectedusers/$day?page=$page&pageSize=$pageSize'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    print('Response Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      // Extract the list of connected users and the total count from the response
+      final List<Map<String, dynamic>> connectedUsersInfo =
+          List<Map<String, dynamic>>.from(responseData['connectedUsers']);
+      final int totalUsersCount = responseData['total'];
+
+      // Return both the connected users info and the total count
+      return {
+        'connectedUsers': connectedUsersInfo,
+        'total': totalUsersCount,
+      };
+    } else {
+      // Handle other errors
+      print('Failed to fetch connected users. Status code: ${response.statusCode}');
+      throw Exception('Failed to fetch connected users. Status code: ${response.statusCode}');
+    }
+  } catch (error) {
+    print('Error fetching connected users: $error');
+    throw Exception('Error fetching connected users: $error');
+  }
+}
+
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       final response = await http.post(
@@ -459,4 +514,5 @@ Future<Map<String, dynamic>> getUserDailyStats(String userId) async {
       throw Exception('Error fetching user global stats');
     }
   }
+ 
 }
